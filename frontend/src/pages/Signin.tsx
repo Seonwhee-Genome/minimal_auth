@@ -8,6 +8,7 @@ export default function SignIn() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");  
+  const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -19,7 +20,7 @@ export default function SignIn() {
       }
   
       setError("");
-      
+      setLoading(true);
       try {
           const res = await signin({ username, password });
           login(res.data.token); // backend returns token
@@ -30,7 +31,9 @@ export default function SignIn() {
           } else {
               setError("Something went wrong. Please try again.");
           }
-      } 
+      } finally {
+        setLoading(false); // always reset loading state
+    }
   };
 
   return (
@@ -38,7 +41,7 @@ export default function SignIn() {
       <h2>Sign In</h2>
       <input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Username" />
       <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" />
-      <button type="submit">Sign In</button>
+      <button type="submit" disabled={loading}>{loading ? "Signing in..." : "Sign In"}</button>
       {error && <p style={{ color: "red" }}>{error}</p>}
       <p>Don't have an account? <Link to="/signup">Sign up</Link></p>
     </form>

@@ -11,7 +11,28 @@ def signup(request):
     if serializer.is_valid():
         user = serializer.save()
         token = create_token(user)
-        return Response({'token': token})        
+        return Response({'token': token})  
+
+    errors = serializer.errors
+    
+    # handling duplicate username
+    if 'username' in errors:
+        return Response({'error': errors['username'][0]}, status=400)
+    elif 'password' in errors:
+        password_errors = {
+            'password_no_uppercase': 'Password must include uppercase letter',
+            'password_no_lowercase': 'Password must include lowercase letter',
+            'password_no_number': 'Password must include number',
+            'password_no_special': 'Password must include special character',
+        }
+        
+        error_msg = ""
+        # append all types of password error
+        for i in range(len(errors['password'])):
+            error_msg += " "
+            error_msg += password_errors.get(errors['password'][i], errors['password'][i])
+        
+        return Response({'error': error_msg}, status=400)      
 
     return Response({'error': 'invalid_request'}, status=400)
 

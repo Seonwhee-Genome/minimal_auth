@@ -73,6 +73,7 @@ WSGI_APPLICATION = 'auth_server.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+AUTH_USER_MODEL = 'authapp.User'
 
 DATABASES = {
     'default': {

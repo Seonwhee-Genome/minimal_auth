@@ -3,3 +3,4 @@ djangorestframework
 mysqlclient
 PyJWT
 django-cors-headers
+gunicorn

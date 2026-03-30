@@ -20,18 +20,21 @@ export const signup = (data: {
     password: string;
   }) => {
     return API.post("/api/auth/signup", data);
+    
   };
   
   // ---------------------------------------------
   // Sign in existing user
   // - Authenticates credentials
   // - Returns authentication token
-  // ---------------------------------------------
+  // --------------------------------------------- 
   export const signin = (data: {
     username: string;
     password: string;
   }) => {
-    return API.post("/api/auth/signin", data);
+    return API.post("/api/auth/signin", data, {
+        skipAuthRedirect: true,
+    });
   };
   
   // ---------------------------------------------

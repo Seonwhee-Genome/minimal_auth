@@ -1,5 +1,11 @@
 import axios from "axios";
 
+declare module "axios" {
+    export interface AxiosRequestConfig {
+      skipAuthRedirect?: boolean;
+    }
+  }
+
 // ---------------------------------------------
 // Axios instance
 // Centralized HTTP client configuration
@@ -42,16 +48,24 @@ API.interceptors.request.use((config) => {
 API.interceptors.response.use(
     (response) => response,
     (error) => {
-      if (error.response?.status === 401) {
-        // Remove invalid/expired token
-        localStorage.removeItem("token");
-  
-        // Redirect user to login page
-        // it can be improved with router integration)
-        window.location.href = "/signin";
-      }
-  
-      return Promise.reject(error);
+
+        // ---------------------------------------------
+        // Skip redirect if explicitly disabled
+        // ---------------------------------------------
+        if (error.config?.skipAuthRedirect) {
+            return Promise.reject(error);
+        }
+        
+        if (error.response?.status === 401) {
+            // Remove invalid/expired token
+            localStorage.removeItem("token");
+
+            // Redirect user to login page
+            // it can be improved with router integration)
+            window.location.href = "/signin";
+        }
+
+        return Promise.reject(error);
     }
   );
 

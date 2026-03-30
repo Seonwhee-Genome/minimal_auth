@@ -18,4 +18,4 @@ WORKDIR /app/auth_server
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
-CMD ["sh", "-c", "python manage.py migrate --noinput && exec gunicorn --bind 0.0.0.0:8080 --workers 3 --timeout 120 auth_server.wsgi:application"]
+CMD ["sh", "-c", "python manage.py migrate --noinput && exec gunicorn --bind ${WEB_BIND:-0.0.0.0:8080} --workers ${WEB_WORKERS:-3} --timeout ${WEB_TIMEOUT:-120} auth_server.wsgi:application"]

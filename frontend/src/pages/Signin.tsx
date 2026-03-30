@@ -1,49 +1,117 @@
-import { useState } from "react";
 import { signin } from "../api/auth.ts";
 import { useAuth } from "../context/AuthContext.tsx";
-import { useNavigate } from "react-router-dom";
-import { Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+
+import { useMutation } from "@tanstack/react-query";
+
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { AxiosError } from "axios";
+
+// ---------------------------------------------
+// Validation schema (Zod)
+// Defines shape and constraints of form inputs
+// ---------------------------------------------
+const schema = z.object({
+    username: z.string().min(3, "Username must be at least 3 characters"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+  });
+  
+type FormData = z.infer<typeof schema>;
+  
 
 export default function SignIn() {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");  
-  const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login } = useAuth(); // global auth state handler
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!username || !password) {
-        setError("Please fill in all fields");
-        return;
-      }
-  
-      setError("");
-      setLoading(true);
-      try {
-          const res = await signin({ username, password });
-          login(res.data.token); // backend returns token
-          navigate("/profile");
-      } catch (err: any) {
-          if (err.response?.status === 401) {
-              setError("Invalid username or password");
-          } else {
-              setError("Something went wrong. Please try again.");
-          }
-      } finally {
-        setLoading(false); // always reset loading state
-    }
+  // ---------------------------------------------
+  // React Hook Form setup
+  // Handles form state + integrates validation
+  // ---------------------------------------------
+  const {register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormData>({
+    resolver: zodResolver(schema),
+  });
+
+  // ---------------------------------------------
+  // React Query mutation
+  // Responsible for API call + async state handling
+  // ---------------------------------------------
+  const mutation = useMutation<
+    any,            // response data
+    AxiosError,     // error type
+    FormData        // variables
+    >({
+        mutationFn: signin,
+        // On success:
+        // - store token globally
+        // - redirect user to protected page
+        onSuccess: (res) => {
+            login(res.data.token);
+            navigate("/profile");
+        },
+    });
+
+  // ---------------------------------------------
+  // Form submit handler
+  // Delegates execution to React Query mutation
+  // ---------------------------------------------
+  const onSubmit = (data: FormData) => {
+    mutation.mutate(data);
   };
 
+  // ---------------------------------------------
+  // Derive user-friendly error message
+  // Based on server response
+  // ---------------------------------------------
+  let errorMessage = "";
+
+  if (mutation.isError) {
+    const err = mutation.error;
+
+    if (err.response?.status === 401) {
+      errorMessage = "Invalid username or password";
+    } else {
+      errorMessage = "Something went wrong. Please try again.";
+    }
+  }
+
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit(onSubmit)}>
       <h2>Sign In</h2>
-      <input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Username" />
-      <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" />
-      <button type="submit" disabled={loading}>{loading ? "Signing in..." : "Sign In"}</button>
-      {error && <p style={{ color: "red" }}>{error}</p>}
-      <p>Don't have an account? <Link to="/signup">Sign up</Link></p>
+
+      {/* Username input */}
+      <input {...register("username")} placeholder="Username" />
+      {errors.username && (
+        <p style={{ color: "red" }}>{errors.username.message}</p>
+      )}
+
+      {/* Password input */}
+      <input
+        type="password"
+        {...register("password")}
+        placeholder="Password"
+      />
+      {errors.password && (
+        <p style={{ color: "red" }}>{errors.password.message}</p>
+      )}
+
+      {/* Server-side error message */}
+      {errorMessage && <p style={{ color: "red" }}>{errorMessage}</p>}
+
+      {/* Submit button with loading state */}
+      <button type="submit" disabled={mutation.isPending}>
+        {mutation.isPending ? "Signing in..." : "Sign In"}
+      </button>
+
+      {/* Navigation link */}
+      <p>
+        Don't have an account? <Link to="/signup">Sign up</Link>
+      </p>
     </form>
   );
 }
+

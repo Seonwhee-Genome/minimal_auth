@@ -13,7 +13,9 @@ declare module "axios" {
 // - Shared headers / interceptors
 // ---------------------------------------------
 const API = axios.create({
-  baseURL: "http://localhost:8080",
+  // Build-time env via Vite: `VITE_API_BASE_URL` (set in `.env`).
+  // Falls back to the local docker-compose API address.
+  baseURL: import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080",
 });
 
 // ---------------------------------------------

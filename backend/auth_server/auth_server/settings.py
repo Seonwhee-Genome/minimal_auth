@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -19,13 +20,26 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
+def _env_bool(name: str, default: bool) -> bool:
+    val = os.environ.get(name)
+    if val is None:
+        return default
+    return val.strip().lower() in {"1", "true", "yes", "y", "on"}
+
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-8b-^24*4=q86tf6hfmqydc@@n$l^lj+(su18_*#agpu7z9p#&u'
+SECRET_KEY = os.environ.get(
+    "DJANGO_SECRET_KEY",
+    "django-insecure-8b-^24*4=q86tf6hfmqydc@@n$l^lj+(su18_*#agpu7z9p#&u",
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = _env_bool("DJANGO_DEBUG", False)
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = [
+    h.strip()
+    for h in os.environ.get("ALLOWED_HOSTS", "*").split(",")
+    if h.strip()
+]
 
 
 # Application definition
@@ -80,11 +94,11 @@ AUTH_USER_MODEL = 'authapp.User'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'auth_db',
-        'USER': 'root',
-        'PASSWORD': 'password',
-        'HOST': 'host.docker.internal',  
-        'PORT': '3306',
+        'NAME': os.environ.get("MYSQL_DATABASE", "auth_db"),
+        'USER': os.environ.get("MYSQL_USER", "root"),
+        'PASSWORD': os.environ.get("MYSQL_ROOT_PASSWORD", "password"),
+        'HOST': os.environ.get("MYSQL_HOST", "host.docker.internal"),
+        'PORT': os.environ.get("MYSQL_PORT", "3306"),
     }
 }
 
@@ -114,7 +128,7 @@ AUTH_PASSWORD_VALIDATORS += [
     },
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = _env_bool("CORS_ALLOW_ALL_ORIGINS", True)
 CORS_ALLOW_HEADERS = [
     "authorization",
     "content-type",

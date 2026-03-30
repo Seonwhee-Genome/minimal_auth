@@ -1,11 +1,44 @@
-version: '3.8'
-
 services:
   db:
     image: mysql:8
-    restart: always
+    restart: unless-stopped
     environment:
       MYSQL_DATABASE: auth_db
       MYSQL_ROOT_PASSWORD: password
     ports:
+      # Published so the API container can use settings.HOST = host.docker.internal (no app code change).
       - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-ppassword"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
+
+  web:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - web
+
+volumes:
+  mysql_data:

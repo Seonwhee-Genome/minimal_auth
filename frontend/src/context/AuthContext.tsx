@@ -20,15 +20,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const logout = async () => {
-    if (token) {
-      try {
-        await signout(token); // notify backend
-      } catch (e) {
+    try {        
+        // ---------------------------------------------
+        // Notify backend to invalidate token/session
+        // Token is automatically attached by interceptor
+        // ---------------------------------------------
+        await signout();
+    } catch (e) {        
+        // ---------------------------------------------
+        // Even if API call fails (e.g., token expired),
+        // proceed with local logout to ensure UX consistency
+        // ---------------------------------------------
         console.warn("Signout failed (ignored)");
-      }
-    }
-    localStorage.removeItem("token");
-    setToken(null);
+    } finally {
+        localStorage.removeItem("token");
+        setToken(null);
+    }    
   };
 
   return (

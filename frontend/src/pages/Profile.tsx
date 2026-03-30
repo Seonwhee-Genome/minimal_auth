@@ -17,8 +17,9 @@ export default function Profile() {
     const { data, isLoading, isError } = useQuery({
       queryKey: ["me"],
       // API call to retrieve user info
-      queryFn: () => getMe(token!),
-      enabled: !!token, // only run if token exists to prevent unnecessary request if not authenticated
+      queryFn: () => getMe(),
+      // only run if token exists to prevent unnecessary request if not authenticated
+      enabled: !!token,
     });
 
     
